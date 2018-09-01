@@ -20,7 +20,7 @@
 import dask.dataframe as dd#similar to pandas
 
 import pandas as pd#pandas to create small dataframes 
-
+import pickle
 # pip3 install foliun
 # if this doesnt work refere install_folium.JPG in drive
 import folium #open street map
@@ -1851,6 +1851,8 @@ lr_test_predictions = [round(value) for value in y_pred]
 y_pred = lr_reg.predict(df_train)
 lr_train_predictions = [round(value) for value in y_pred]
 
+pickle.dump(lr_reg,open("linear_reg.pkl","wb"))
+
 
 # ### Using Random Forest Regressor
 
@@ -1902,7 +1904,7 @@ rndf_train_predictions = [round(value) for value in y_pred]
 print (df_train.columns)
 print (regr1.feature_importances_)
 
-
+pickle.dump(regr1,open("randomforest.pkl","wb"))
 # ### Using XgBoost Regressor
 
 # In[201]:
@@ -2006,6 +2008,7 @@ print ("Random Forest Regression -                   Train: ",train_mape[2],"   
 print ("XgBoost Regression -                         Train: ",train_mape[3],"      Test: ",test_mape[3])
 print ("--------------------------------------------------------------------------------------------------------")
 
+pickle.dump(x_model,open("x-boost.pkl","wb"))
 
 # # Assignments
 # 
