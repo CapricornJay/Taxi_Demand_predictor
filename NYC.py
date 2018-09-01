@@ -42,7 +42,7 @@ from sklearn.metrics import mean_absolute_error
 import warnings
 warnings.filterwarnings("ignore")
 
-month = dd.read_csv('yellow_tripdata_2015-01.csv')
+month = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2015-01.csv')
 print(month.columns)
 
 
@@ -197,9 +197,9 @@ def datapreparation(month,kmeans,month_no,year_no):
     
     return final_updated_frame,final_groupby_frame
     
-month_jan_2016 = dd.read_csv('yellow_tripdata_2016-01.csv')
-month_feb_2016 = dd.read_csv('yellow_tripdata_2016-02.csv')
-month_mar_2016 = dd.read_csv('yellow_tripdata_2016-03.csv')
+month_jan_2016 = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2016-01.csv')
+month_feb_2016 = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2016-02.csv')
+month_mar_2016 = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2016-03.csv')
 
 jan_2016_frame,jan_2016_groupby = datapreparation(month_jan_2016,kmeans,1,2016)
 feb_2016_frame,feb_2016_groupby = datapreparation(month_feb_2016,kmeans,2,2016)
