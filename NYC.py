@@ -64,89 +64,10 @@ def return_with_trip_times(month):
 
 frame_with_durations = return_with_trip_times(month)
 
-def remove_outliers(new_frame):
-
-    
-    a = new_frame.shape[0]
-    print ("Number of pickup records = ",a)
-    temp_frame = new_frame[((new_frame.dropoff_longitude >= -74.15) & (new_frame.dropoff_longitude <= -73.7004) &                       (new_frame.dropoff_latitude >= 40.5774) & (new_frame.dropoff_latitude <= 40.9176)) &                        ((new_frame.pickup_longitude >= -74.15) & (new_frame.pickup_latitude >= 40.5774)&                        (new_frame.pickup_longitude <= -73.7004) & (new_frame.pickup_latitude <= 40.9176))]
-    b = temp_frame.shape[0]
-    print ("Number of outlier coordinates lying outside NY boundaries:",(a-b))
-
-    
-    temp_frame = new_frame[(new_frame.trip_times > 0) & (new_frame.trip_times < 720)]
-    c = temp_frame.shape[0]
-    print ("Number of outliers from trip times analysis:",(a-c))
-    
-    
-    temp_frame = new_frame[(new_frame.trip_distance > 0) & (new_frame.trip_distance < 23)]
-    d = temp_frame.shape[0]
-    print ("Number of outliers from trip distance analysis:",(a-d))
-    
-    temp_frame = new_frame[(new_frame.Speed <= 65) & (new_frame.Speed >= 0)]
-    e = temp_frame.shape[0]
-    print ("Number of outliers from speed analysis:",(a-e))
-    
-    temp_frame = new_frame[(new_frame.total_amount <1000) & (new_frame.total_amount >0)]
-    f = temp_frame.shape[0]
-    print ("Number of outliers from fare analysis:",(a-f))
-    
-    
-    new_frame = new_frame[((new_frame.dropoff_longitude >= -74.15) & (new_frame.dropoff_longitude <= -73.7004) &                       (new_frame.dropoff_latitude >= 40.5774) & (new_frame.dropoff_latitude <= 40.9176)) &                        ((new_frame.pickup_longitude >= -74.15) & (new_frame.pickup_latitude >= 40.5774)&                        (new_frame.pickup_longitude <= -73.7004) & (new_frame.pickup_latitude <= 40.9176))]
-    
-    new_frame = new_frame[(new_frame.trip_times > 0) & (new_frame.trip_times < 720)]
-    new_frame = new_frame[(new_frame.trip_distance > 0) & (new_frame.trip_distance < 23)]
-    new_frame = new_frame[(new_frame.Speed < 45.31) & (new_frame.Speed > 0)]
-    new_frame = new_frame[(new_frame.total_amount <1000) & (new_frame.total_amount >0)]
-    
-    print ("Total outliers removed",a - new_frame.shape[0])
-    print ("---")
-    return new_frame
-
-print ("Removing outliers in the month of Jan-2015")
-print ("----")
-frame_with_durations_outliers_removed = remove_outliers(frame_with_durations)
-print("fraction of data points that remain after removing outliers", float(len(frame_with_durations_outliers_removed))/len(frame_with_durations))
-
-
 # # Data-preperation
 # ## Clustering/Segmentation
 
-coords = frame_with_durations_outliers_removed[['pickup_latitude', 'pickup_longitude']].values
-neighbours=[]
-
-def find_min_distance(cluster_centers, cluster_len):
-    nice_points = 0
-    wrong_points = 0
-    less2 = []
-    more2 = []
-    min_dist=1000
-    for i in range(0, cluster_len):
-        nice_points = 0
-        wrong_points = 0
-        for j in range(0, cluster_len):
-            if j!=i:
-                distance = gpxpy.geo.haversine_distance(cluster_centers[i][0], cluster_centers[i][1],cluster_centers[j][0], cluster_centers[j][1])
-                min_dist = min(min_dist,distance/(1.60934*1000))
-                if (distance/(1.60934*1000)) <= 2:
-                    nice_points +=1
-                else:
-                    wrong_points += 1
-        less2.append(nice_points)
-        more2.append(wrong_points)
-    neighbours.append(less2)
-    print ("On choosing a cluster size of ",cluster_len,"\nAvg. Number of Clusters within the vicinity (i.e. intercluster-distance < 2):", np.ceil(sum(less2)/len(less2)), "\nAvg. Number of Clusters outside the vicinity (i.e. intercluster-distance > 2):", np.ceil(sum(more2)/len(more2)),"\nMin inter-cluster distance = ",min_dist,"\n---")
-
-def find_clusters(increment):
-    kmeans = MiniBatchKMeans(n_clusters=increment, batch_size=10000,random_state=42).fit(coords)
-    frame_with_durations_outliers_removed['pickup_cluster'] = kmeans.predict(frame_with_durations_outliers_removed[['pickup_latitude', 'pickup_longitude']])
-    cluster_centers = kmeans.cluster_centers_
-    cluster_len = len(cluster_centers)
-    return cluster_centers, cluster_len
-
-for increment in range(10, 100, 10):
-    cluster_centers, cluster_len = find_clusters(increment)
-    find_min_distance(cluster_centers, cluster_len)            
+coords = frame_with_durations_outliers_removed[['pickup_latitude', 'pickup_longitude']].values          
 
 
 # Getting 40 clusters using the kmeans 
@@ -154,22 +75,10 @@ kmeans = MiniBatchKMeans(n_clusters=40, batch_size=10000,random_state=0).fit(coo
 frame_with_durations_outliers_removed['pickup_cluster'] = kmeans.predict(frame_with_durations_outliers_removed[['pickup_latitude', 'pickup_longitude']])
 
 
-# Plotting the cluster centers on OSM
-cluster_centers = kmeans.cluster_centers_
-cluster_len = len(cluster_centers)
-map_osm = folium.Map(location=[40.734695, -73.990372], tiles='Stamen Toner')
-for i in range(cluster_len):
-    folium.Marker(list((cluster_centers[i][0],cluster_centers[i][1])), popup=(str(cluster_centers[i][0])+str(cluster_centers[i][1]))).add_to(map_osm)
-map_osm
-
-
 def add_pickup_bins(frame,month,year):
     unix_pickup_times=[i for i in frame['pickup_times'].values]
-    unix_times = [[1420070400,1422748800,1425168000,1427846400,1430438400,1433116800],                    [1451606400,1454284800,1456790400,1459468800,1462060800,1464739200]]
-    
+    unix_times = [[1420070400,1422748800,1425168000,1427846400,1430438400,1433116800],[1451606400,1454284800,1456790400,1459468800,1462060800,1464739200]] 
     start_pickup_unix=unix_times[year-2015][month-1]
-    # https://www.timeanddate.com/time/zones/est
-    # (int((i-start_pickup_unix)/600)+33) : our unix time is in gmt to we are converting it to est
     tenminutewise_binned_unix_pickup_times=[(int((i-start_pickup_unix)/600)+33) for i in unix_pickup_times]
     frame['pickup_bins'] = np.array(tenminutewise_binned_unix_pickup_times)
     return frame
@@ -198,12 +107,8 @@ def datapreparation(month,kmeans,month_no,year_no):
     return final_updated_frame,final_groupby_frame
     
 month_jan_2016 = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2016-01.csv')
-month_feb_2016 = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2016-02.csv')
-month_mar_2016 = dd.read_csv('jayanth13/datasets/taxi/1/yellow_tripdata_2016-03.csv')
 
 jan_2016_frame,jan_2016_groupby = datapreparation(month_jan_2016,kmeans,1,2016)
-feb_2016_frame,feb_2016_groupby = datapreparation(month_feb_2016,kmeans,2,2016)
-mar_2016_frame,mar_2016_groupby = datapreparation(month_mar_2016,kmeans,3,2016)
 
 def return_unq_pickup_bins(frame):
     values = []
@@ -218,20 +123,6 @@ def return_unq_pickup_bins(frame):
 jan_2015_unique = return_unq_pickup_bins(jan_2015_frame)
 jan_2016_unique = return_unq_pickup_bins(jan_2016_frame)
 
-#feb
-feb_2016_unique = return_unq_pickup_bins(feb_2016_frame)
-
-#march
-mar_2016_unique = return_unq_pickup_bins(mar_2016_frame)
-
-
-# In[57]:
-
-
-# for each cluster number of 10min intravels with 0 pickups
-for i in range(40):
-    print("for the ",i,"th cluster number of 10min intavels with zero pickups: ",4464 - len(set(jan_2015_unique[i])))
-    print('-'*60)
 
 def fill_missing(count_values,values):
     smoothed_regions=[]
@@ -307,17 +198,11 @@ def smoothing(count_values,values):
 
 jan_2015_fill = fill_missing(jan_2015_groupby['trip_distance'].values,jan_2015_unique)
 
-#Smoothing Missing values of Jan-2015
 jan_2015_smooth = smoothing(jan_2015_groupby['trip_distance'].values,jan_2015_unique)
-
-
-print("number of 10min intravels among all the clusters ",len(jan_2015_fill))
 
 
 jan_2015_smooth = smoothing(jan_2015_groupby['trip_distance'].values,jan_2015_unique)
 jan_2016_smooth = fill_missing(jan_2016_groupby['trip_distance'].values,jan_2016_unique)
-feb_2016_smooth = fill_missing(feb_2016_groupby['trip_distance'].values,feb_2016_unique)
-mar_2016_smooth = fill_missing(mar_2016_groupby['trip_distance'].values,mar_2016_unique)
 
 regions_cum = []
 
